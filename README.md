@@ -1,4 +1,4 @@
-# menubar-online-status
+# Team Status Bar
 
 > An electron-vue project
 

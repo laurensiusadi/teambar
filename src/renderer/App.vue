@@ -6,7 +6,7 @@
 
 <script>
   export default {
-    name: 'menubar-online-status'
+    name: 'team-status-bar'
   }
 </script>
 
