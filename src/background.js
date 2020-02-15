@@ -2,8 +2,9 @@
 
 import { Menu, protocol, ipcMain } from 'electron'
 import { menubar } from 'menubar'
-const path = require('path')
-const AutoLaunch = require('auto-launch')
+import path from 'path'
+import AutoLaunch from 'auto-launch'
+
 const isDevelopment = process.env.NODE_ENV !== 'production'
 
 // Scheme must be registered before the app is ready
@@ -69,21 +70,21 @@ menubarApp.on('ready', () => {
     menubarApp.tray.popUpContextMenu(contextMenu)
   })
 
-  // menubarApp.window.webContents.on('devtools-opened', () => {
-  //   menubarApp.window.setSize(800, 600)
-  //   menubarApp.window.center()
-  //   menubarApp.window.resizable = true
-  // })
+  menubarApp.window.webContents.on('devtools-opened', () => {
+    menubarApp.window.setSize(800, 600)
+    menubarApp.window.center()
+    menubarApp.window.resizable = true
+  })
 
-  // menubarApp.window.webContents.on('devtools-closed', () => {
-  //   const trayBounds = menubarApp.tray.getBounds()
-  //   menubarApp.window.setSize(
-  //     browserWindowOpts.width,
-  //     browserWindowOpts.height
-  //   )
-  //   menubarApp.positioner.move('trayCenter', trayBounds)
-  //   menubarApp.window.resizable = false
-  // })
+  menubarApp.window.webContents.on('devtools-closed', () => {
+    const trayBounds = menubarApp.tray.getBounds()
+    menubarApp.window.setSize(
+      browserWindowOpts.width,
+      browserWindowOpts.height
+    )
+    menubarApp.positioner.move('trayCenter', trayBounds)
+    menubarApp.window.resizable = false
+  })
 })
 
 // Exit cleanly on request from parent process in development mode.

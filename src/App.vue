@@ -11,5 +11,8 @@
 </script>
 
 <style>
-
+html {
+  background-color: black;
+  color: white;
+}
 </style>

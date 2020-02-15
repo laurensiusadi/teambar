@@ -11,12 +11,15 @@
   },
   "main": "background.js",
   "dependencies": {
+    "@8bu/vue-otp-input": "^1.1.8",
     "auto-launch": "^5.0.5",
     "core-js": "^3.6.4",
+    "firebase": "^7.8.2",
     "menubar": "^8.0.0",
     "vue": "^2.6.11",
     "vue-router": "^3.1.5",
-    "vuex": "^3.1.2"
+    "vuex": "^3.1.2",
+    "vuex-easy-firestore": "^1.35.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.2.0",
@@ -26,6 +29,8 @@
     "electron": "^8.0.0",
     "eslint": "^6.7.2",
     "eslint-plugin-vue": "^6.1.2",
+    "node-sass": "^4.13.1",
+    "sass-loader": "^8.0.2",
     "vue-cli-plugin-electron-builder": "~1.4.5",
     "vue-template-compiler": "^2.6.11"
   },
@@ -46,5 +51,8 @@
   "browserslist": [
     "> 1%",
     "last 2 versions"
-  ]
+  ],
+  "resolutions": {
+    "node-gyp": "5.0.3"
+  }
 }
