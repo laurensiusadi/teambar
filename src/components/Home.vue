@@ -1,22 +1,33 @@
 <template>
   <div>
-    <otp-input
-      v-model="roomNumber"
-      class="room-input"
-      :length="6"
-      pattern="[^0-9]+"
-      :ignorePattern="false"
-      :size="32"
-      @valid="handleOnComplete"
-    />
-    <button @click="joinRoom()">Join Existing Team</button>
-    <button @click="createNewRoom()">Create New Team</button>
-    <pre>{{ rooms }}</pre>
+    <div v-if="!loading">
+      <template v-if="!existingRoom">
+        <otp-input
+          v-model="roomNumber"
+          class="room-input"
+          :length="6"
+          pattern="[^0-9]+"
+          :ignorePattern="false"
+          :size="32"
+          @valid="handleOnComplete"
+        />
+        <button @click="joinRoom()">Join Existing Team</button>
+        <button @click="createNewRoom()">Create New Team</button>
+      </template>
+      <template v-else>
+        Current room {{ this.roomNumber }}
+      </template>
+    </div>
+    <div v-else>
+      Loading
+    </div>
+    <p>{{ info }}</p>
   </div>
 </template>
 
 <script>
 import OTPInput8 from '@8bu/vue-otp-input'
+import { FieldValue } from '../db'
 
 export default {
   name: 'Home',
@@ -25,15 +36,17 @@ export default {
   },
   data() {
     return {
-      roomNumber: ''
+      roomNumber: '',
+      loading: false,
+      info: '',
+      existingRoom: false
     }
   },
   created() {
-    this.$store.dispatch('rooms/fetchAndAdd')
-  },
-  computed: {
-    rooms() {
-      return this.$store.getters['rooms/storeRef']
+    console.log('existing room', this.$storage.has('room'))
+    if (this.$storage.has('room')) {
+      this.existingRoom = true
+      this.roomNumber = this.$storage.get('room')
     }
   },
   methods: {
@@ -43,16 +56,34 @@ export default {
       }
     },
     createNewRoom() {
+      this.loading = true
+      this.info = ''
       if (this.roomNumber.length === 6) {
-        this.$store.dispatch('rooms/insert', {
-          "room-id": this.roomNumber
+        this.$db.collection('rooms').add({
+          room_id: this.roomNumber,
+          createdAt: FieldValue.serverTimestamp()
+        })
+        .then(() => {
+          this.loading = false
         })
       }
     },
     joinRoom() {
-      // this.$store.dispatch('rooms/fetchAndAdd', {
-      //   where: [['room_id', '==', `${this.roomNumber}`]],
-      // })
+      this.loading = true
+      this.info = ''
+      this.$db.collection('rooms')
+        .where('room_id', '==', this.roomNumber)
+        .get()
+        .then(result => {
+          this.loading = false
+          console.log('get room', result)
+          if (result.empty) {
+            console.log('Room not found')
+            return
+          }
+          this.info = `Joined room ${this.roomNumber}`
+          this.$storage.set('room', this.roomNumber)
+        })
     }
   }
 };
