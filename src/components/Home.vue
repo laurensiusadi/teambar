@@ -15,7 +15,13 @@
         <h3>Current room {{ this.roomNumber }}</h3>
         <button @click="leaveRoom()">Leave Room</button>
         <div v-for="(member, index) in mapObjToArray(members)" :key="index">
-          <pre>{{ member }}</pre>
+          <div class="member-item">
+            <div class="member-status" :class="member.state">[]</div>
+            <div class="member-name">{{ member.computer }}</div>
+            <div class="member-last-seen">
+              {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+            </div>
+          </div>
         </div>
       </template>
     </div>
@@ -70,6 +76,22 @@ export default {
     computerName() { return `${os.hostname}-${os.type} ${os.release}` }
   },
   methods: {
+    formatDate(timestamp) {
+      const intervals = [
+        { label: 'year', seconds: 31556926 },
+        { label: 'month', seconds: 2629744 },
+        { label: 'day', seconds: 86400 },
+        { label: 'hour', seconds: 3600 },
+        { label: 'minute', seconds: 60 },
+        { label: 'second', seconds: 1 }
+      ]
+
+      const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
+      const interval = intervals.find(i => i.seconds < seconds)
+      const count = Math.floor(seconds / interval.seconds)
+      return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`
+
+    },
     mapObjToArray(obj) {
       if (obj) {
         return Object.keys(obj).map(key => ({ ...obj[key], id: key }))
