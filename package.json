@@ -17,6 +17,7 @@
     "electron-store": "^5.1.0",
     "firebase": "^7.8.2",
     "menubar": "^8.0.0",
+    "node-machine-id": "^1.1.12",
     "vue": "^2.6.11",
     "vue-router": "^3.1.5",
     "vuefire": "^2.2.1",

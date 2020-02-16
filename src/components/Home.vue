@@ -15,7 +15,9 @@
         <button @click="createNewRoom()">Create New Team</button>
       </template>
       <template v-else>
-        Current room {{ this.roomNumber }}
+        <h3>Current room {{ this.roomNumber }}</h3>
+        {{ computerName }}
+        <button @click="leaveRoom()">Leave Room</button>
       </template>
     </div>
     <div v-else>
@@ -27,7 +29,9 @@
 
 <script>
 import OTPInput8 from '@8bu/vue-otp-input'
-import { FieldValue } from '../db'
+import { machineIdSync } from 'node-machine-id'
+import os from 'os'
+import { firebase } from '../db'
 
 export default {
   name: 'Home',
@@ -47,7 +51,15 @@ export default {
     if (this.$storage.has('room')) {
       this.existingRoom = true
       this.roomNumber = this.$storage.get('room')
+      // connect to firebase tell room I'm online
     }
+  },
+  mounted() {
+    
+  },
+  computed: {
+    machine() { return machineIdSync(true) },
+    computerName() { return `${os.hostname}-${os.type} ${os.release}` }
   },
   methods: {
     handleOnComplete(value) {
@@ -59,30 +71,68 @@ export default {
       this.loading = true
       this.info = ''
       if (this.roomNumber.length === 6) {
-        this.$db.collection('rooms').add({
-          room_id: this.roomNumber,
-          createdAt: FieldValue.serverTimestamp()
+        this.$db.ref('rooms/' + this.roomNumber).set({
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
+          members: [
+            {
+              machine: this.machine,
+              computer: this.computerName,
+              state: 'online',
+              lastChange: firebase.database.ServerValue.TIMESTAMP
+            }
+          ]
         })
         .then(() => {
           this.loading = false
+          this.info = `Joined room ${this.roomNumber}`
+          this.$storage.set('room', this.roomNumber)
+          this.existingRoom = true
         })
       }
     },
     joinRoom() {
       this.loading = true
       this.info = ''
-      this.$db.collection('rooms')
-        .where('room_id', '==', this.roomNumber)
-        .get()
-        .then(result => {
+      this.$db.ref('rooms/' + this.roomNumber)
+        .once('value', snapshot => {
           this.loading = false
-          console.log('get room', result)
-          if (result.empty) {
-            console.log('Room not found')
-            return
+          const room = snapshot.val()
+          if (room) {
+            let member = {
+              machine: this.machine,
+              computer: this.computerName,
+              state: 'online',
+              lastChange: firebase.database.ServerValue.TIMESTAMP
+            }
+            let newMembers = room.members && room.members.length > 0 ? room.members.concat(member) : [].concat(member)
+            this.$db.ref('/rooms/' + this.roomNumber + '/members').set(newMembers)
+            this.info = `Joined room ${this.roomNumber}`
+            this.$storage.set('room', this.roomNumber)
+            this.existingRoom = true
+          } else {
+            this.info = 'Room not found'
           }
-          this.info = `Joined room ${this.roomNumber}`
-          this.$storage.set('room', this.roomNumber)
+        })
+    },
+    leaveRoom() {
+      this.loading = true
+      this.info = ''
+      this.$db.ref('rooms/' + this.roomNumber)
+        .once('value', snapshot => {
+          let room = snapshot.val()
+          let newMembers = room.members && room.members.length > 0 ?
+            room.members.filter(member => { return member.machine !== this.machine }) : []
+          this.$db.ref('rooms/' + this.roomNumber)
+          .set({
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            members: newMembers
+          })
+          .then(() => {
+            this.loading = false
+            this.existingRoom = false
+            this.$storage.delete('room')
+            this.roomNumber = ''
+          })
         })
     }
   }

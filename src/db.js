@@ -1,5 +1,5 @@
 import firebase from 'firebase/app'
-import 'firebase/firestore'
+import 'firebase/database'
 
 const firebaseConfig = {
   apiKey: process.env.VUE_APP_apiKey,
@@ -11,9 +11,8 @@ const firebaseConfig = {
   appId: process.env.VUE_APP_appId
 }
 
-export const db = firebase
+export default firebase
   .initializeApp(firebaseConfig)
-  .firestore()
+  .database()
 
-const { FieldValue } = firebase.firestore
-export { FieldValue }
+export { firebase }
