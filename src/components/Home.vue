@@ -8,17 +8,14 @@
           :length="6"
           pattern="[^0-9]+"
           :ignorePattern="false"
-          :size="32"
-          @valid="handleOnComplete"
+          :size="24"
         />
-        <button @click="joinRoom()">Join Existing Team</button>
-        <button @click="createNewRoom()">Create New Team</button>
       </template>
       <template v-else>
         <h3>Current room {{ this.roomNumber }}</h3>
         <button @click="leaveRoom()">Leave Room</button>
-        <div v-for="(member, index) in members" :key="index">
-          {{ member }}
+        <div v-for="(member, index) in mapObjToArray(members)" :key="index">
+          <pre>{{ member }}</pre>
         </div>
       </template>
     </div>
@@ -46,21 +43,25 @@ export default {
       loading: false,
       info: '',
       existingRoom: false,
-      members: []
+      members: {}
     }
   },
   created() {
     if (this.$storage.has('room')) {
       this.existingRoom = true
       this.roomNumber = this.$storage.get('room')
-      this.setupOnlinePresence()
     }
   },
   watch: {
     roomNumber: {
       immediate: true,
       handler(roomNumber) {
-        this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members/`))
+        if (roomNumber.length === 6) {
+          this.joinRoom()
+          this.onConnected()
+          // Watch members of joined room
+          this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members`))
+        }
       }
     }
   },
@@ -69,55 +70,24 @@ export default {
     computerName() { return `${os.hostname}-${os.type} ${os.release}` }
   },
   methods: {
-    handleOnComplete(value) {
-      if (value) {
-        console.log("OTP completed: ", value);
+    mapObjToArray(obj) {
+      if (obj) {
+        return Object.keys(obj).map(key => ({ ...obj[key], id: key }))
       }
     },
-    createNewRoom() {
-      this.loading = true
-      this.info = ''
-      if (this.roomNumber.length === 6) {
-        this.$db.ref(`/rooms/${this.roomNumber}`).set({ createdAt: firebase.database.ServerValue.TIMESTAMP })
-        this.$db.ref(`/rooms/${this.roomNumber}/members/${this.machine}`).set({
-          computer: this.computerName,
-          state: 'online',
-          lastChange: firebase.database.ServerValue.TIMESTAMP
-        })
-        .then(() => {
-          this.loading = false
-          this.info = `Joined room ${this.roomNumber}`
-          this.$storage.set('room', this.roomNumber)
-          this.existingRoom = true
-        })
-      }
+    onConnected() {
+      // On connected to firebase bind status watcher
+      this.$db.ref('.info/connected').on('value', (snapshot) => this.bindStatusWatcher(snapshot))
     },
     joinRoom() {
-      this.loading = true
-      this.info = ''
-      this.$db.ref('rooms/' + this.roomNumber)
-        .once('value', snapshot => {
-          this.loading = false
-          const room = snapshot.val()
-          if (room) {
-            let member = {
-              computer: this.computerName,
-              state: 'online',
-              lastChange: firebase.database.ServerValue.TIMESTAMP
-            }
-            this.$db.ref(`/rooms/${this.roomNumber}/members/${this.machine}`).set(member)
-            this.info = `Joined room ${this.roomNumber}`
-            this.$storage.set('room', this.roomNumber)
-            this.existingRoom = true
-          } else {
-            this.info = 'Room not found'
-          }
-        })
+      this.$storage.set('room', this.roomNumber)
+      this.existingRoom = true
     },
     leaveRoom() {
       this.loading = true
       this.info = ''
-      this.$db.ref(`/rooms/${this.roomNumber}/members/${this.machine}`).remove()
+      this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).onDisconnect().cancel()
+      this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).remove()
         .then(() => {
           this.loading = false
           this.existingRoom = false
@@ -125,7 +95,8 @@ export default {
           this.roomNumber = ''
         })
     },
-    setupOnlinePresence() {
+    bindStatusWatcher(snapshot) {
+      this.loading = true
       let userStatusDatabaseRef = this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`)
       let isOfflineForDatabase = {
         state: 'offline',
@@ -135,12 +106,11 @@ export default {
         state: 'online',
         computer: this.computerName,
         lastChange: firebase.database.ServerValue.TIMESTAMP }
-      
-      this.$db.ref('.info/connected').on('value', (snapshot) => {
-        if (snapshot.val() == false) { return }
-        userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(function() {
-          userStatusDatabaseRef.set(isOnlineForDatabase)
-        })
+
+      if (snapshot.val() == false) { return }
+      userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(() => {
+        userStatusDatabaseRef.set(isOnlineForDatabase)
+        this.loading = false
       })
     }
   }

@@ -18,10 +18,10 @@ const autoStart = new AutoLaunch({
 })
 
 const browserWindowOpts = {
-  width: 250,
-  height: 350,
-  minWidth: 250,
-  minHeight: 350,
+  width: 400,
+  height: 300,
+  minWidth: 400,
+  minHeight: 300,
   resizable: false,
   webPreferences: {
     overlayScrollbars: true,
@@ -71,7 +71,7 @@ menubarApp.on('ready', () => {
   })
 
   menubarApp.window.webContents.on('devtools-opened', () => {
-    menubarApp.window.setSize(800, 600)
+    menubarApp.window.setSize(400, 1000)
     menubarApp.window.center()
     menubarApp.window.resizable = true
   })
