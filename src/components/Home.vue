@@ -16,8 +16,10 @@
       </template>
       <template v-else>
         <h3>Current room {{ this.roomNumber }}</h3>
-        {{ computerName }}
         <button @click="leaveRoom()">Leave Room</button>
+        <div v-for="(member, index) in members" :key="index">
+          {{ member }} <span v-if="member.id === machine">YOU</span>
+        </div>
       </template>
     </div>
     <div v-else>
@@ -43,15 +45,16 @@ export default {
       roomNumber: '',
       loading: false,
       info: '',
-      existingRoom: false
+      existingRoom: false,
+      members: []
     }
   },
   created() {
-    console.log('existing room', this.$storage.has('room'))
     if (this.$storage.has('room')) {
       this.existingRoom = true
       this.roomNumber = this.$storage.get('room')
-      // connect to firebase tell room I'm online
+      this.getRoomMembers()
+      this.setupOnlinePresence()
     }
   },
   mounted() {
@@ -71,16 +74,11 @@ export default {
       this.loading = true
       this.info = ''
       if (this.roomNumber.length === 6) {
-        this.$db.ref('rooms/' + this.roomNumber).set({
-          createdAt: firebase.database.ServerValue.TIMESTAMP,
-          members: [
-            {
-              machine: this.machine,
-              computer: this.computerName,
-              state: 'online',
-              lastChange: firebase.database.ServerValue.TIMESTAMP
-            }
-          ]
+        this.$db.ref(`/rooms/${this.roomNumber}`).set({ createdAt: firebase.database.ServerValue.TIMESTAMP })
+        this.$db.ref(`/rooms/${this.roomNumber}/members/${this.machine}`).set({
+          computer: this.computerName,
+          state: 'online',
+          lastChange: firebase.database.ServerValue.TIMESTAMP
         })
         .then(() => {
           this.loading = false
@@ -103,7 +101,7 @@ export default {
               state: 'online',
               lastChange: firebase.database.ServerValue.TIMESTAMP
             }
-            this.$db.ref('/rooms/' + this.roomNumber + '/members/' + this.machine).set(member)
+            this.$db.ref(`/rooms/${this.roomNumber}/members/${this.machine}`).set(member)
             this.info = `Joined room ${this.roomNumber}`
             this.$storage.set('room', this.roomNumber)
             this.existingRoom = true
@@ -115,16 +113,45 @@ export default {
     leaveRoom() {
       this.loading = true
       this.info = ''
-      this.$db.ref('rooms/' + this.roomNumber + '/members/' + this.machine).remove()
+      this.$db.ref(`/rooms/${this.roomNumber}/members/${this.machine}`).remove()
         .then(() => {
           this.loading = false
           this.existingRoom = false
           this.$storage.delete('room')
           this.roomNumber = ''
         })
+    },
+    getRoomMembers() {
+      this.$db.ref(`rooms/${this.roomNumber}/members`)
+        .once('value', snapshot => {
+          const members = snapshot.val()
+          if (members && Object.keys(members).length > 0) {
+            for (let key in members) {
+              this.members.push({...members[key], id: key})
+            }
+          }
+        })
+    },
+    setupOnlinePresence() {
+      let userStatusDatabaseRef = this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`)
+      let isOfflineForDatabase = {
+        state: 'offline',
+        computer: this.computerName,
+        lastChange: firebase.database.ServerValue.TIMESTAMP }
+      let isOnlineForDatabase = {
+        state: 'online',
+        computer: this.computerName,
+        lastChange: firebase.database.ServerValue.TIMESTAMP }
+      
+      this.$db.ref('.info/connected').on('value', (snapshot) => {
+        if (snapshot.val() == false) { return }
+        userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(function() {
+          userStatusDatabaseRef.set(isOnlineForDatabase)
+        })
+      })
     }
   }
-};
+}
 </script>
 
 <style lang="scss">

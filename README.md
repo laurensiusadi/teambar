@@ -25,10 +25,10 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 
 ### Todo
 
-- [ ] Connect to firebase
-- [ ] Join existing or create
-- [ ] Create new room with random 6 digit
-- [ ] On connect Show os.hostname on room with status online
-- [ ] On disconnect change status offline
-- [ ] Option to leave room
+- [x] Connect to firebase
+- [x] Join existing or create
+- [x] Create new room with random 6 digit
+- [x] On connect Show os.hostname on room with status online
+- [x] On disconnect change status offline
+- [x] Option to leave room
 - [ ] Change taskbar icon with number of user online in the room
