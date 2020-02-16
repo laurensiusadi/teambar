@@ -14,12 +14,13 @@
     "@8bu/vue-otp-input": "^1.1.8",
     "auto-launch": "^5.0.5",
     "core-js": "^3.6.4",
+    "electron-store": "^5.1.0",
     "firebase": "^7.8.2",
     "menubar": "^8.0.0",
     "vue": "^2.6.11",
     "vue-router": "^3.1.5",
-    "vuex": "^3.1.2",
-    "vuex-easy-firestore": "^1.35.2"
+    "vuefire": "^2.2.1",
+    "vuex": "^3.1.2"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.2.0",
