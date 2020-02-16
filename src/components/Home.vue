@@ -1,7 +1,11 @@
 <template>
   <div>
     <div v-if="!loading">
-      <template v-if="!existingRoom">
+      <div v-if="!existingRoom" style="text-align: center; padding-top: 32px;">
+        <div class="header">
+          <h4 class="heading">TEAM MENUBAR</h4>
+        </div>
+        <p>Insert team code, you'll join instantly.</p>
         <otp-input
           v-model="roomNumber"
           class="room-input"
@@ -10,20 +14,25 @@
           :ignorePattern="false"
           :size="24"
         />
-      </template>
-      <template v-else>
-        <h3>Current room {{ this.roomNumber }}</h3>
-        <button @click="leaveRoom()">Leave Room</button>
-        <div v-for="(member, index) in mapObjToArray(members)" :key="index">
-          <div class="member-item">
-            <div class="member-status" :class="member.state">[]</div>
-            <div class="member-name">{{ member.computer }}</div>
-            <div class="member-last-seen">
-              {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+      </div>
+      <div class="container" v-else>
+        <div class="header">
+          <div class="heading">TEAM {{ this.roomNumber }}</div>
+          <button class="button" @click="leaveRoom()">Leave Room</button>
+        </div>
+        <div class="member-wrapper">
+          <div v-for="(member, index) in mapObjToArray(members)"
+            class="member-item" :key="index">
+            <div class="member-status" :class="member.state">&bull;</div>
+            <div class="member-info">
+              <div class="member-name">{{ member.computer }}</div>
+              <div class="member-last-seen">
+                {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+              </div>
             </div>
           </div>
         </div>
-      </template>
+      </div>
     </div>
     <div v-else>
       Loading
@@ -152,31 +161,23 @@ export default {
 
 <style lang="scss">
 .room-input {
+  text-align: center;
+  padding: 0;
   .otp-input-8-field {
     display: inline-block;
     vertical-align: top;
     font-size: inherit;
     overflow: hidden;
     position: relative;
-    &::after {
-      content: '';
-      border-radius: 9999px;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      position: absolute;
-      display: block;
-      height: 3px;
-      background-color: white;
-    }
     &:not(:last-child) {
       margin-right: 0.5rem;
     }
     input {
-      background: transparent;
+      background: #131417;
       color: white;
       font-weight: bold;
-      border: 0;
+      border: 1px solid #25262A;
+      border-radius: 4px;
       -webkit-box-sizing: border-box;
       box-sizing: border-box;
       padding: 0;
@@ -186,6 +187,65 @@ export default {
       line-height: 1.75em;
       text-align: center;
     }
+  }
+}
+
+.header {
+  display: flex;
+  padding: 12px;
+  .heading {
+    flex: 1;
+    color: #9397a7;
+    font-weight: bold;
+    padding-left: 8px;
+    line-height: 31px;
+    margin: 0;
+  }
+  .button {
+    background-color: #0064fe;
+    color: white;
+    border-radius: 4px;
+    border-style: none;
+    padding: 8px 12px;
+  }
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.member-wrapper {
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.member-item {
+  font-size: 14px;
+  display: flex;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #25262a;
+  background-color: #090a0c;
+  margin: 8px;
+  .member-status {
+    font-size: 32px;
+    line-height: 14px;
+    padding:  0 8px 0 4px;
+    &.online {
+      color: greenyellow;
+    }
+    &.offline {
+      color: red;
+    }
+  }
+  .member-info {
+    flex: 1
   }
 }
 </style>
