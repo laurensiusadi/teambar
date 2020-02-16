@@ -49,7 +49,8 @@ export default {
       loading: false,
       info: '',
       existingRoom: false,
-      members: {}
+      members: {},
+      now: Date.now()
     }
   },
   created() {
@@ -57,6 +58,14 @@ export default {
       this.existingRoom = true
       this.roomNumber = this.$storage.get('room')
     }
+  },
+  mounted() {
+    this.interval = setInterval(() => {
+      this.now = Date.now()
+    }, 1000 * 60)
+  },
+  beforeDestroy() {
+    clearInterval(this.interval)
   },
   watch: {
     roomNumber: {
@@ -85,12 +94,14 @@ export default {
         { label: 'minute', seconds: 60 },
         { label: 'second', seconds: 1 }
       ]
-
-      const seconds = Math.floor((Date.now() - new Date(timestamp).getTime()) / 1000)
-      const interval = intervals.find(i => i.seconds < seconds)
-      const count = Math.floor(seconds / interval.seconds)
-      return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`
-
+      const seconds = Math.floor((this.now - new Date(timestamp).getTime()) / 1000)
+      if (seconds > 0) {
+        const interval = intervals.find(i => i.seconds < seconds)
+        const count = Math.floor(seconds / interval.seconds)
+        return `${count} ${interval.label}${count !== 1 ? 's' : ''} ago`
+      } else {
+        return 'A few seconds ago'
+      }
     },
     mapObjToArray(obj) {
       if (obj) {
