@@ -58,7 +58,7 @@ export default {
     
   },
   computed: {
-    machine() { return machineIdSync(true) },
+    machine() { return machineIdSync() },
     computerName() { return `${os.hostname}-${os.type} ${os.release}` }
   },
   methods: {
@@ -99,13 +99,11 @@ export default {
           const room = snapshot.val()
           if (room) {
             let member = {
-              machine: this.machine,
               computer: this.computerName,
               state: 'online',
               lastChange: firebase.database.ServerValue.TIMESTAMP
             }
-            let newMembers = room.members && room.members.length > 0 ? room.members.concat(member) : [].concat(member)
-            this.$db.ref('/rooms/' + this.roomNumber + '/members').set(newMembers)
+            this.$db.ref('/rooms/' + this.roomNumber + '/members/' + this.machine).set(member)
             this.info = `Joined room ${this.roomNumber}`
             this.$storage.set('room', this.roomNumber)
             this.existingRoom = true
@@ -117,22 +115,12 @@ export default {
     leaveRoom() {
       this.loading = true
       this.info = ''
-      this.$db.ref('rooms/' + this.roomNumber)
-        .once('value', snapshot => {
-          let room = snapshot.val()
-          let newMembers = room.members && room.members.length > 0 ?
-            room.members.filter(member => { return member.machine !== this.machine }) : []
-          this.$db.ref('rooms/' + this.roomNumber)
-          .set({
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-            members: newMembers
-          })
-          .then(() => {
-            this.loading = false
-            this.existingRoom = false
-            this.$storage.delete('room')
-            this.roomNumber = ''
-          })
+      this.$db.ref('rooms/' + this.roomNumber + '/members/' + this.machine).remove()
+        .then(() => {
+          this.loading = false
+          this.existingRoom = false
+          this.$storage.delete('room')
+          this.roomNumber = ''
         })
     }
   }
