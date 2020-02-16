@@ -18,7 +18,7 @@
         <h3>Current room {{ this.roomNumber }}</h3>
         <button @click="leaveRoom()">Leave Room</button>
         <div v-for="(member, index) in members" :key="index">
-          {{ member }} <span v-if="member.id === machine">YOU</span>
+          {{ member }}
         </div>
       </template>
     </div>
@@ -53,12 +53,16 @@ export default {
     if (this.$storage.has('room')) {
       this.existingRoom = true
       this.roomNumber = this.$storage.get('room')
-      this.getRoomMembers()
       this.setupOnlinePresence()
     }
   },
-  mounted() {
-    
+  watch: {
+    roomNumber: {
+      immediate: true,
+      handler(roomNumber) {
+        this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members/`))
+      }
+    }
   },
   computed: {
     machine() { return machineIdSync() },
@@ -119,17 +123,6 @@ export default {
           this.existingRoom = false
           this.$storage.delete('room')
           this.roomNumber = ''
-        })
-    },
-    getRoomMembers() {
-      this.$db.ref(`rooms/${this.roomNumber}/members`)
-        .once('value', snapshot => {
-          const members = snapshot.val()
-          if (members && Object.keys(members).length > 0) {
-            for (let key in members) {
-              this.members.push({...members[key], id: key})
-            }
-          }
         })
     },
     setupOnlinePresence() {
