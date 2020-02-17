@@ -112,16 +112,19 @@ export default {
           this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members`))
         }
       }
+    },
+    membersOnline() {
+      ipcRenderer.send('changeIcon', this.membersOnline ? 'online' : 'offline')
     }
   },
   computed: {
     machine() { return machineIdSync() },
-    computerName() { return `${os.hostname}` }
+    computerName() { return `${os.hostname}` },
+    membersOnline() { return this.mapObjToArray(this.members).find(m => m.id !== this.machine && m.state === 'online') }
   },
   methods: {
     connectionHandler(bool) {
       this.connected = bool
-      ipcRenderer.send('changeIcon', bool ? 'online' : 'offline')
     },
     formatDate(timestamp) {
       const intervals = [
@@ -146,6 +149,7 @@ export default {
         return Object.keys(obj).map(key => ({ ...obj[key], id: key }))
           .sort((a, b) => a.state === b.state ? b.lastChange - a.lastChange : b.state === 'online' ? 1 : -1)
       }
+      return []
     },
     joinRoom() {
       // FUTURE TODO: check if room have password
@@ -154,7 +158,6 @@ export default {
       this.$db.ref('.info/connected').on('value', (snapshot) => this.bindStatusWatcher(snapshot))
       this.$storage.set('room', this.roomNumber)
       this.existingRoom = true
-      ipcRenderer.send('changeIcon', 'online')
     },
     leaveRoom() {
       this.setLoading(true)
@@ -166,7 +169,6 @@ export default {
           this.setLoading(false)
           this.$storage.delete('room')
         })
-      ipcRenderer.send('changeIcon', 'offline')
     },
     bindStatusWatcher(snapshot) {
       let userStatusDatabaseRef = this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`)

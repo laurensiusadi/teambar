@@ -55,7 +55,7 @@ menubarApp.on('ready', () => {
 
   if (isDevelopment && !process.env.IS_TEST) {
     menubarApp.window.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    // menubarApp.window.webContents.openDevTools()
+    menubarApp.window.webContents.openDevTools()
   }
 
   const contextMenu = Menu.buildFromTemplate([
