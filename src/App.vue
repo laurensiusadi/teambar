@@ -16,7 +16,7 @@ body {
   padding: 0;
   background-color: #1e1f23;
   color: white;
-  font-size: 18px;
+  font-size: 16px;
   font-family: 'SF Pro Text', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, 'Open Sans', 'Helvetica Neue', sans-serif;
   height: 100vh;
   overflow: hidden;

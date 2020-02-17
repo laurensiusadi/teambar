@@ -10,10 +10,10 @@ const isDevelopment = process.env.NODE_ENV !== 'production'
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
 
-const iconDefault = path.join(__dirname, '../public/icons/icon.png');
+const iconDefault = path.join(__dirname, '../public/icons/icon-offline.png');
 
 const autoStart = new AutoLaunch({
-  name: 'Team Menubar',
+  name: 'Teambar',
   isHidden: true
 })
 
@@ -84,6 +84,10 @@ menubarApp.on('ready', () => {
     )
     menubarApp.positioner.move('trayCenter', trayBounds)
     menubarApp.window.resizable = false
+  })
+
+  ipcMain.on('changeIcon', (event, args) => {
+    menubarApp.tray.setImage(path.join(__dirname, `../public/icons/icon-${args}.ico`))
   })
 })
 

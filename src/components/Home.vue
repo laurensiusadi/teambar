@@ -1,68 +1,68 @@
 <template>
-  <transition name="fade">
-    <div key="main" v-if="!loading">
-      <div v-if="!existingRoom" style="text-align: center; padding-top: 32px;">
-        <div class="header">
-          <h4 class="heading flex-1">Teambar</h4>
-        </div>
-        <p style="margin-top: 8px">Insert team code, you'll join instantly.</p>
-        <otp-input
-          v-model="roomNumber"
-          class="room-input"
-          :length="6"
-          pattern="[^0-9]+"
-          :ignorePattern="false"
-          :size="24"
-        />
-      </div>
-      <div class="container" v-else>
-        <div class="member-wrapper">
-          <transition-group name="member" tag="div" appear>
-            <div v-for="member in mapObjToArray(members)"
-              class="member-item" :key="member.id">
-              <div class="member-status" :class="member.state">&bull;</div>
-              <div class="member-info">
-                <div class="member-name">
-                  {{ member.id === machine ? 'You - ' : '' }}
-                  {{ member.computer }}</div>
-                <div class="member-last-seen">
-                  {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+  <div class="container">
+    <div class="d-flex flex-1">
+      <transition name="fade" mode="out-in">
+        <div v-if="!loading" key="main" class="flex-1">
+          <div key="code" v-if="!existingRoom">
+            <p style="text-align:center;margin-top: 64px;margin-bottom:8px">Insert team code, you'll join instantly.</p>
+            <otp-input
+              v-model="roomNumber"
+              class="room-input"
+              :length="6"
+              pattern="[^0-9]+"
+              :ignorePattern="false"
+              :size="24"
+            />
+          </div>
+          <div key="room" v-else class="member-wrapper">
+            <transition-group name="member" tag="div" appear>
+              <div v-for="member in mapObjToArray(members)"
+                class="member-item" :key="member.id">
+                <div class="member-status" :class="member.state">&bull;</div>
+                <div class="member-info">
+                  <div class="member-name">
+                    {{ member.computer }}
+                    {{ member.id === machine ? ' (You)' : '' }}
+                  </div>
+                  <div class="member-last-seen">
+                    {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+                  </div>
                 </div>
               </div>
-            </div>
-          </transition-group>
-        </div>
-        <div class="header">
-          <div class="flex-1">
-            <span class="heading">Teambar</span>
-          </div>
-          <div>
-            <transition name="text-fade" mode="out-in">
-              <button
-                :key="isCopying"
-                class="button secondary mr-1 code"
-                title="Copy to Clipboard"
-                @click="copyNumber()"
-                style="width: 80px"
-              >
-                {{ isCopying ? 'Copied!' : this.roomNumber }}
-              </button>
-            </transition>
-            <button class="button red" @click="leaveRoom()">Leave Room</button>
+            </transition-group>
           </div>
         </div>
-      </div>
+        <div v-else key="load" class="d-flex flex-1" style="align-items: center; justify-content: center">
+          <span style="letter-spacing: 2px;">{{ roomNumber ? 'JOINING TEAM' : 'LEAVING TEAM' }}</span>
+        </div>
+      </transition>
     </div>
-    <div key="load" v-else>
-      <div style="line-height: 100vh; text-align: center; letter-spacing: 2px;">
-        {{ roomNumber ? 'JOINING TEAM' : 'LEAVING TEAM' }}
+    <div class="header">
+      <div class="flex-1">
+        <span class="heading">Teambar</span>
       </div>
+      <transition name="fade" mode="out-in">
+        <div v-show="existingRoom && !loading">
+          <transition name="text-fade" mode="out-in">
+            <button
+              :key="isCopying"
+              class="button secondary mr-1 code"
+              title="Copy to Clipboard"
+              @click="copyNumber()"
+              style="width: 80px"
+            >
+              {{ isCopying ? 'Copied!' : this.roomNumber }}
+            </button>
+          </transition>
+          <button class="button red" @click="leaveRoom()">Leave Room</button>
+        </div>
+      </transition>
     </div>
-  </transition>
+  </div>
 </template>
 
 <script>
-import { clipboard } from 'electron'
+import { clipboard, ipcRenderer } from 'electron'
 import OTPInput8 from '@8bu/vue-otp-input'
 import { machineIdSync } from 'node-machine-id'
 import os from 'os'
@@ -80,10 +80,13 @@ export default {
       isCopying: false,
       existingRoom: false,
       members: {},
-      now: Date.now()
+      now: Date.now(),
+      connected: navigator.onLine
     }
   },
   created() {
+    window.addEventListener('online', () => this.connectionHandler(true))
+    window.addEventListener('offline', () => this.connectionHandler(false))
     if (this.$storage.has('room')) {
       this.existingRoom = true
       this.roomNumber = this.$storage.get('room')
@@ -96,6 +99,8 @@ export default {
   },
   beforeDestroy() {
     clearInterval(this.interval)
+    window.removeEventListener('online', () => this.connectionHandler(true))
+    window.removeEventListener('offline', () => this.connectionHandler(false))
   },
   watch: {
     roomNumber: {
@@ -114,6 +119,10 @@ export default {
     computerName() { return `${os.hostname}-${os.type} ${os.release}` }
   },
   methods: {
+    connectionHandler(bool) {
+      this.connected = bool
+      ipcRenderer.send('changeIcon', bool ? 'online' : 'offline')
+    },
     formatDate(timestamp) {
       const intervals = [
         { label: 'year', seconds: 31556926 },
@@ -143,10 +152,11 @@ export default {
       this.$db.ref('.info/connected').on('value', (snapshot) => this.bindStatusWatcher(snapshot))
       this.$storage.set('room', this.roomNumber)
       this.existingRoom = true
+      ipcRenderer.send('changeIcon', 'online')
     },
     leaveRoom() {
-      this.roomNumber = ''
       this.setLoading(true)
+      this.roomNumber = ''
       this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).onDisconnect().cancel()
       this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).remove()
         .then(() => {
@@ -154,6 +164,7 @@ export default {
           this.setLoading(false)
           this.$storage.delete('room')
         })
+      ipcRenderer.send('changeIcon', 'offline')
     },
     bindStatusWatcher(snapshot) {
       let userStatusDatabaseRef = this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`)
@@ -223,17 +234,11 @@ export default {
   }
 }
 
-.flex-1 {
-  flex: 1;
-}
-
-.mr-1 {
-  margin-right: 8px;
-}
-
-p {
-  color: #b7beca;
-}
+.d-flex { display: flex }
+.flex-1 { flex: 1; }
+.flex-col { flex-direction: column }
+.mr-1 { margin-right: 8px; }
+p { color: #b7beca; }
 
 .header {
   display: flex;
@@ -242,7 +247,7 @@ p {
     color: white;
     font-weight: bold;
     padding: 0 8px;
-    line-height: 31px;
+    line-height: 33px;
     margin: 0;
     font-size: 24px;
     letter-spacing: 0.2px;
@@ -317,7 +322,7 @@ p {
 
 .member-enter-active { transition: all 1s; }
 .member-enter { opacity: 0; transform: translateX(30px); }
-.fade-enter-active, .fade-leave-active { transition: opacity .25s ease-in-out; }
+.fade-enter-active { transition: opacity .5s ease-in; }
 .fade-enter, .fade-leave-to { opacity: 0; }
 .text-fade-enter-active, .text-fade-leave-active { transition: all .15s ease; }
 .text-fade-enter, .text-fade-leave-to { color: #090a0c; }

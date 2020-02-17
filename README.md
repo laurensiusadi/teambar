@@ -31,5 +31,6 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 - [x] On connect Show os.hostname on room with status online
 - [x] On disconnect change status offline
 - [x] Option to leave room
-- [ ] Change taskbar icon with number of user online in the room
+- [x] Change taskbar icon of user online in the room
+- [ ] Handle if app started offline
 - [ ] Download app page
