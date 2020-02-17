@@ -18,10 +18,10 @@ const autoStart = new AutoLaunch({
 })
 
 const browserWindowOpts = {
-  width: 400,
-  height: 300,
-  minWidth: 400,
-  minHeight: 300,
+  width: 360,
+  height: 360,
+  minWidth: 360,
+  minHeight: 360,
   resizable: false,
   webPreferences: {
     overlayScrollbars: true,
@@ -55,7 +55,7 @@ menubarApp.on('ready', () => {
 
   if (isDevelopment && !process.env.IS_TEST) {
     menubarApp.window.loadURL(process.env.WEBPACK_DEV_SERVER_URL)
-    menubarApp.window.webContents.openDevTools()
+    // menubarApp.window.webContents.openDevTools()
   }
 
   const contextMenu = Menu.buildFromTemplate([

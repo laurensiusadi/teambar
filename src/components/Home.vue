@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div class="d-flex flex-1">
+    <div class="d-flex inner-wrapper">
       <transition name="fade" mode="out-in">
         <div v-if="!loading" key="main" class="flex-1">
           <div key="code" v-if="!existingRoom">
@@ -14,7 +14,7 @@
               :size="24"
             />
           </div>
-          <div key="room" v-else class="member-wrapper">
+          <div key="room" v-else class="flex-1">
             <transition-group name="member" tag="div" appear>
               <div v-for="member in mapObjToArray(members)"
                 class="member-item" :key="member.id">
@@ -33,7 +33,7 @@
           </div>
         </div>
         <div v-else key="load" class="d-flex flex-1" style="align-items: center; justify-content: center">
-          <span style="letter-spacing: 2px;">{{ roomNumber ? 'JOINING TEAM' : 'LEAVING TEAM' }}</span>
+          <p style="letter-spacing: 2px;">{{ roomNumber ? 'JOINING TEAM' : 'LEAVING TEAM' }}</p>
         </div>
       </transition>
     </div>
@@ -116,7 +116,7 @@ export default {
   },
   computed: {
     machine() { return machineIdSync() },
-    computerName() { return `${os.hostname}-${os.type} ${os.release}` }
+    computerName() { return `${os.hostname}` }
   },
   methods: {
     connectionHandler(bool) {
@@ -144,9 +144,11 @@ export default {
     mapObjToArray(obj) {
       if (obj) {
         return Object.keys(obj).map(key => ({ ...obj[key], id: key }))
+          .sort((a, b) => a.state === b.state ? b.lastChange - a.lastChange : b.state === 'online' ? 1 : -1)
       }
     },
     joinRoom() {
+      // FUTURE TODO: check if room have password
       this.setLoading(true)
       // On connected to firebase bind status watcher
       this.$db.ref('.info/connected').on('value', (snapshot) => this.bindStatusWatcher(snapshot))
@@ -192,7 +194,7 @@ export default {
       if (bool) {
         this.loading = bool
       } else {
-        setTimeout(() => { this.loading = bool }, 750)
+        setTimeout(() => { this.loading = bool }, 500)
       }
     }
   }
@@ -242,37 +244,40 @@ p { color: #b7beca; }
 
 .header {
   display: flex;
-  padding: 12px;
+  padding: 8px;
+  background-color: #131417;
+  border-top: 1px solid #2a2c32;
   .heading {
     color: white;
-    font-weight: bold;
+    font-weight: 500;
     padding: 0 8px;
     line-height: 33px;
     margin: 0;
-    font-size: 24px;
-    letter-spacing: 0.2px;
+    font-size: 21px;
+    letter-spacing: -0.012em;
   }
-  .button {
-    background-color: #0064fe;
-    color: white;
-    border-radius: 4px;
-    border: 1px solid transparent;
-    padding: 8px 12px;
-    cursor: pointer;
-    outline: none;
-    &.red {
-      background-color: #131417;
-      border-color: #ff2b25;
-      &:hover {
-        background-color: #c51d17;
-      }
+}
+
+.button {
+  background-color: #0064fe;
+  color: white;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  padding: 8px 12px;
+  cursor: pointer;
+  outline: none;
+  &.red {
+    background-color: #131417;
+    border-color: #ff2b25;
+    &:hover {
+      background-color: #c51d17;
     }
-    &.secondary {
-      background-color: #131417;
-      &:hover {
-        background-color: #090a0c;
-        border: 1px solid #0064fe;
-      }
+  }
+  &.secondary {
+    background-color: #090a0c;
+    &:hover {
+      background-color: #1a1d22;
+      border: 1px solid #0064fe;
     }
   }
 }
@@ -283,7 +288,7 @@ p { color: #b7beca; }
   height: 100vh;
 }
 
-.member-wrapper {
+.inner-wrapper {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
@@ -322,9 +327,9 @@ p { color: #b7beca; }
 
 .member-enter-active { transition: all 1s; }
 .member-enter { opacity: 0; transform: translateX(30px); }
-.fade-enter-active { transition: opacity .5s ease-in; }
+.fade-enter-active { transition: opacity .25s ease-in; }
 .fade-enter, .fade-leave-to { opacity: 0; }
-.text-fade-enter-active, .text-fade-leave-active { transition: all .15s ease; }
+.text-fade-enter-active { transition: all .5s ease; }
 .text-fade-enter, .text-fade-leave-to { color: #090a0c; }
 
 </style>
