@@ -32,3 +32,4 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 - [x] On disconnect change status offline
 - [x] Option to leave room
 - [ ] Change taskbar icon with number of user online in the room
+- [ ] Download app page

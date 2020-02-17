@@ -1,11 +1,11 @@
 <template>
-  <div>
-    <div v-if="!loading">
+  <transition name="fade">
+    <div key="main" v-if="!loading">
       <div v-if="!existingRoom" style="text-align: center; padding-top: 32px;">
         <div class="header">
-          <h4 class="heading">TEAM MENUBAR</h4>
+          <h4 class="heading flex-1">Teambar</h4>
         </div>
-        <p>Insert team code, you'll join instantly.</p>
+        <p style="margin-top: 8px">Insert team code, you'll join instantly.</p>
         <otp-input
           v-model="roomNumber"
           class="room-input"
@@ -16,32 +16,53 @@
         />
       </div>
       <div class="container" v-else>
-        <div class="header">
-          <div class="heading">TEAM {{ this.roomNumber }}</div>
-          <button class="button" @click="leaveRoom()">Leave Room</button>
-        </div>
         <div class="member-wrapper">
-          <div v-for="(member, index) in mapObjToArray(members)"
-            class="member-item" :key="index">
-            <div class="member-status" :class="member.state">&bull;</div>
-            <div class="member-info">
-              <div class="member-name">{{ member.computer }}</div>
-              <div class="member-last-seen">
-                {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+          <transition-group name="member" tag="div" appear>
+            <div v-for="member in mapObjToArray(members)"
+              class="member-item" :key="member.id">
+              <div class="member-status" :class="member.state">&bull;</div>
+              <div class="member-info">
+                <div class="member-name">
+                  {{ member.id === machine ? 'You - ' : '' }}
+                  {{ member.computer }}</div>
+                <div class="member-last-seen">
+                  {{ member.state === 'online' ? 'Online' : formatDate(member.lastChange) }}
+                </div>
               </div>
             </div>
+          </transition-group>
+        </div>
+        <div class="header">
+          <div class="flex-1">
+            <span class="heading">Teambar</span>
+          </div>
+          <div>
+            <transition name="text-fade" mode="out-in">
+              <button
+                :key="isCopying"
+                class="button secondary mr-1 code"
+                title="Copy to Clipboard"
+                @click="copyNumber()"
+                style="width: 80px"
+              >
+                {{ isCopying ? 'Copied!' : this.roomNumber }}
+              </button>
+            </transition>
+            <button class="button red" @click="leaveRoom()">Leave Room</button>
           </div>
         </div>
       </div>
     </div>
-    <div v-else>
-      Loading
+    <div key="load" v-else>
+      <div style="line-height: 100vh; text-align: center; letter-spacing: 2px;">
+        {{ roomNumber ? 'JOINING TEAM' : 'LEAVING TEAM' }}
+      </div>
     </div>
-    <p>{{ info }}</p>
-  </div>
+  </transition>
 </template>
 
 <script>
+import { clipboard } from 'electron'
 import OTPInput8 from '@8bu/vue-otp-input'
 import { machineIdSync } from 'node-machine-id'
 import os from 'os'
@@ -56,7 +77,7 @@ export default {
     return {
       roomNumber: '',
       loading: false,
-      info: '',
+      isCopying: false,
       existingRoom: false,
       members: {},
       now: Date.now()
@@ -82,7 +103,6 @@ export default {
       handler(roomNumber) {
         if (roomNumber.length === 6) {
           this.joinRoom()
-          this.onConnected()
           // Watch members of joined room
           this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members`))
         }
@@ -117,28 +137,25 @@ export default {
         return Object.keys(obj).map(key => ({ ...obj[key], id: key }))
       }
     },
-    onConnected() {
+    joinRoom() {
+      this.setLoading(true)
       // On connected to firebase bind status watcher
       this.$db.ref('.info/connected').on('value', (snapshot) => this.bindStatusWatcher(snapshot))
-    },
-    joinRoom() {
       this.$storage.set('room', this.roomNumber)
       this.existingRoom = true
     },
     leaveRoom() {
-      this.loading = true
-      this.info = ''
+      this.roomNumber = ''
+      this.setLoading(true)
       this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).onDisconnect().cancel()
       this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).remove()
         .then(() => {
-          this.loading = false
           this.existingRoom = false
+          this.setLoading(false)
           this.$storage.delete('room')
-          this.roomNumber = ''
         })
     },
     bindStatusWatcher(snapshot) {
-      this.loading = true
       let userStatusDatabaseRef = this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`)
       let isOfflineForDatabase = {
         state: 'offline',
@@ -152,8 +169,20 @@ export default {
       if (snapshot.val() == false) { return }
       userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(() => {
         userStatusDatabaseRef.set(isOnlineForDatabase)
-        this.loading = false
+        this.setLoading(false)
       })
+    },
+    copyNumber() {
+      this.isCopying = true
+      clipboard.writeText(this.roomNumber)
+      setTimeout(() => { this.isCopying = false }, 1500)
+    },
+    setLoading(bool) {
+      if (bool) {
+        this.loading = bool
+      } else {
+        setTimeout(() => { this.loading = bool }, 750)
+      }
     }
   }
 }
@@ -176,7 +205,7 @@ export default {
       background: #131417;
       color: white;
       font-weight: bold;
-      border: 1px solid #25262A;
+      border: 2px solid #25262A;
       border-radius: 4px;
       -webkit-box-sizing: border-box;
       box-sizing: border-box;
@@ -186,27 +215,60 @@ export default {
       font-size: inherit;
       line-height: 1.75em;
       text-align: center;
+      outline: none;
+      &:focus {
+        border-color: #0064fe;
+      }
     }
   }
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.mr-1 {
+  margin-right: 8px;
+}
+
+p {
+  color: #b7beca;
 }
 
 .header {
   display: flex;
   padding: 12px;
   .heading {
-    flex: 1;
-    color: #9397a7;
+    color: white;
     font-weight: bold;
-    padding-left: 8px;
+    padding: 0 8px;
     line-height: 31px;
     margin: 0;
+    font-size: 24px;
+    letter-spacing: 0.2px;
   }
   .button {
     background-color: #0064fe;
     color: white;
     border-radius: 4px;
-    border-style: none;
+    border: 1px solid transparent;
     padding: 8px 12px;
+    cursor: pointer;
+    outline: none;
+    &.red {
+      background-color: #131417;
+      border-color: #ff2b25;
+      &:hover {
+        background-color: #c51d17;
+      }
+    }
+    &.secondary {
+      background-color: #131417;
+      &:hover {
+        background-color: #090a0c;
+        border: 1px solid #0064fe;
+      }
+    }
   }
 }
 
@@ -238,14 +300,26 @@ export default {
     line-height: 14px;
     padding:  0 8px 0 4px;
     &.online {
-      color: greenyellow;
+      color: #58cf65;
     }
     &.offline {
-      color: red;
+      color: #7d828e;
     }
   }
   .member-info {
-    flex: 1
+    flex: 1;
+    .member-last-seen {
+      font-size: 12px;
+      color: #848a96;
+    }
   }
 }
+
+.member-enter-active { transition: all 1s; }
+.member-enter { opacity: 0; transform: translateX(30px); }
+.fade-enter-active, .fade-leave-active { transition: opacity .25s ease-in-out; }
+.fade-enter, .fade-leave-to { opacity: 0; }
+.text-fade-enter-active, .text-fade-leave-active { transition: all .15s ease; }
+.text-fade-enter, .text-fade-leave-to { color: #090a0c; }
+
 </style>
