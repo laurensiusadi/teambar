@@ -33,7 +33,7 @@
           </div>
         </div>
         <div v-else key="load" class="d-flex flex-1" style="align-items: center; justify-content: center">
-          <p style="letter-spacing: 2px;">{{ roomNumber ? 'JOINING TEAM' : 'LEAVING TEAM' }}</p>
+          <p style="letter-spacing: 2px;">{{ existingRoom ? 'JOINING TEAM' : 'LEAVING TEAM' }}</p>
         </div>
       </transition>
     </div>
@@ -153,21 +153,21 @@ export default {
     },
     joinRoom() {
       // FUTURE TODO: check if room have password
+      this.existingRoom = true
       this.setLoading(true)
       // On connected to firebase bind status watcher
       this.$db.ref('.info/connected').on('value', (snapshot) => this.bindStatusWatcher(snapshot))
       this.$storage.set('room', this.roomNumber)
-      this.existingRoom = true
     },
     leaveRoom() {
+      this.existingRoom = false
       this.setLoading(true)
-      this.roomNumber = ''
       this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).onDisconnect().cancel()
       this.$db.ref(`rooms/${this.roomNumber}/members/${this.machine}`).remove()
         .then(() => {
-          this.existingRoom = false
-          this.setLoading(false)
+          this.roomNumber = ''
           this.$storage.delete('room')
+          this.setLoading(false)
         })
     },
     bindStatusWatcher(snapshot) {
