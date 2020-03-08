@@ -29,7 +29,10 @@ let options = {
   preloadWindow: true,
   width: 220,
   height: 300,
-  resizable: isDev
+  resizable: isDev,
+  webPreferences: {
+    nodeIntegration: true
+  }
 }
 
 const mb = menubar(options)
