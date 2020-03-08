@@ -27,11 +27,15 @@ let options = {
   tooltip: 'Team Statusbar',
   index: winURL,
   preloadWindow: true,
-  width: 220,
-  height: 300,
-  resizable: isDev,
-  webPreferences: {
-    nodeIntegration: true
+  browserWindow: {
+    width: 360,
+    height: 360,
+    minWidth: 360,
+    minHeight: 360,
+    resizable: isDev,
+    webPreferences: {
+      nodeIntegration: true
+    }
   }
 }
 
