@@ -22,8 +22,8 @@ const winURL = process.env.NODE_ENV === 'development'
   ? `http://localhost:9080`
   : `file://${__dirname}/index.html`
 
-let iconFileName = isMac ? 'IconTemplate.png' : 'Icon.png'
-let iconRelativePath = `../../${isDev ? '' : 'dist/electron/'}static/${iconFileName}`
+let iconFileName = isMac ? 'icon-offline.png' : 'icon-offline.png'
+let iconRelativePath = `../../${isDev ? '' : 'dist/electron/'}static/icons/${iconFileName}`
 
 let options = {
   icon: path.join(__dirname, iconRelativePath),
@@ -81,7 +81,7 @@ mb.on('after-create-window', () => {
   }
 
   ipcMain.on('changeIcon', (event, args) => {
-    mb.tray.setImage(path.join(__dirname, `../../static/icons/icon-${args}.ico`))
+    mb.tray.setImage(path.join(__dirname, `../../${isDev ? '' : 'dist/electron/'}static/icons/icon-${args}.png`))
   })
 })
 

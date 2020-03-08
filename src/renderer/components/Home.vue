@@ -90,7 +90,7 @@ export default {
     window.addEventListener('offline', () => this.connectionHandler(false))
     if (this.$storage.has('room')) {
       this.existingRoom = true
-      this.roomNumber = this.$storage.get('room')
+      this.onChangeRoomNumber(this.$storage.get('room'))
     }
   },
   mounted () {
@@ -105,7 +105,7 @@ export default {
   },
   watch: {
     membersOnline () {
-      ipcRenderer.send('changeIcon', this.membersOnline ? 'online' : 'offline')
+      ipcRenderer.send('changeIcon', this.membersOnline && this.existingRoom ? 'online' : 'offline')
     }
   },
   computed: {
