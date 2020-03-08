@@ -1,11 +1,14 @@
 'use strict'
 
-const { Menu } = require('electron')
+const { Menu, protocol, ipcMain } = require('electron')
 const path = require('path')
 const { menubar } = require('menubar')
 
 const isDev = process.env.NODE_ENV === 'development'
 const isMac = process.platform === 'darwin'
+
+// Scheme must be registered before the app is ready
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }])
 
 /**
  * Set `__static` path to static files in production
@@ -76,6 +79,10 @@ mb.on('after-create-window', () => {
       mb.window.webContents.openDevTools()
     })
   }
+
+  ipcMain.on('changeIcon', (event, args) => {
+    mb.tray.setImage(path.join(__dirname, `../../static/icons/icon-${args}.ico`))
+  })
 })
 
 /**
