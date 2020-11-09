@@ -25,7 +25,7 @@ const browserWindowOpts = {
   resizable: false,
   webPreferences: {
     overlayScrollbars: true,
-    nodeIntegration: true
+    nodeIntegration: process.env.ELECTRON_NODE_INTEGRATION 
   }
 }
 

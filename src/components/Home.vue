@@ -2,11 +2,12 @@
   <div class="container">
     <div class="d-flex inner-wrapper">
       <transition name="fade" mode="out-in">
-        <div v-if="!loading" key="main" class="flex-1">
-          <div key="code" v-if="!existingRoom">
-            <p style="text-align:center;margin-top: 64px;margin-bottom:8px">Insert team code, you'll join instantly.</p>
+        <div v-if="!loading" key="main" class="d-flex flex-1">
+          <div key="code" v-if="!existingRoom" class="flex-1" style="align-self: center">
+            <p style="text-align:center;margin-bottom:8px">Insert team code, you'll join instantly.</p>
             <otp-input
-              v-model="roomNumber"
+              value="roomNumber"
+              @change="onChangeRoomNumber"
               class="room-input"
               :length="6"
               pattern="[^0-9]+"
@@ -63,7 +64,7 @@
 
 <script>
 import { clipboard, ipcRenderer } from 'electron'
-import OTPInput8 from '@8bu/vue-otp-input'
+import OTPInput from '@8bu/vue-otp-input'
 import { machineIdSync } from 'node-machine-id'
 import os from 'os'
 import { firebase } from '../db'
@@ -71,7 +72,7 @@ import { firebase } from '../db'
 export default {
   name: 'Home',
   components: {
-    'otp-input': OTPInput8,
+    'otp-input': OTPInput
   },
   data() {
     return {
@@ -89,7 +90,7 @@ export default {
     window.addEventListener('offline', () => this.connectionHandler(false))
     if (this.$storage.has('room')) {
       this.existingRoom = true
-      this.roomNumber = this.$storage.get('room')
+      this.onChangeRoomNumber(this.$storage.get('room'))
     }
   },
   mounted() {
@@ -103,18 +104,8 @@ export default {
     window.removeEventListener('offline', () => this.connectionHandler(false))
   },
   watch: {
-    roomNumber: {
-      immediate: true,
-      handler(roomNumber) {
-        if (roomNumber.length === 6) {
-          this.joinRoom()
-          // Watch members of joined room
-          this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members`))
-        }
-      }
-    },
     membersOnline() {
-      ipcRenderer.send('changeIcon', this.membersOnline ? 'online' : 'offline')
+      ipcRenderer.send('changeIcon', this.membersOnline && this.existingRoom ? 'online' : 'offline')
     }
   },
   computed: {
@@ -151,6 +142,14 @@ export default {
       }
       return []
     },
+    onChangeRoomNumber(roomNumber) {
+      if (roomNumber.length === 6) {
+        this.roomNumber = roomNumber
+        this.joinRoom()
+        // Watch members of joined room
+        this.$rtdbBind('members', this.$db.ref(`/rooms/${roomNumber}/members`))
+      }
+    },
     joinRoom() {
       // FUTURE TODO: check if room have password
       this.existingRoom = true
@@ -181,7 +180,7 @@ export default {
         computer: this.computerName,
         lastChange: firebase.database.ServerValue.TIMESTAMP }
 
-      if (snapshot.val() == false) { return }
+      if (snapshot.val() === false) { return }
       userStatusDatabaseRef.onDisconnect().set(isOfflineForDatabase).then(() => {
         userStatusDatabaseRef.set(isOnlineForDatabase)
         this.setLoading(false)
