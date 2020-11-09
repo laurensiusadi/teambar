@@ -1,6 +1,10 @@
-# Team Status Bar
+# Teambar
 
-> An electron-vue project
+> Insert 6 digits number and enter a room with your team, find out others' online status. 
+
+![Teambar](teambar.png)
+
+Build with VueJS, Electron, Menubar, and Firebase.
 
 #### Build Setup
 
@@ -13,7 +17,6 @@ npm run dev
 
 # build electron application for production
 npm run build
-
 
 # lint all JS/Vue component files in `src/`
 npm run lint
