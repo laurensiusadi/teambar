@@ -1,8 +1,8 @@
 {
-  "name": "team-status-bar",
-  "version": "0.0.1",
-  "author": "laurensiusadi <laurensiusadi@gmail.com>",
-  "description": "An electron-vue project",
+  "name": "teambar",
+  "version": "0.1.0",
+  "author": "Laurensius Adi",
+  "description": "See your teams' online status in a room",
   "main": "./dist/electron/main.js",
   "scripts": {
     "build": "node .electron-vue/build.js && electron-builder",
@@ -17,9 +17,24 @@
     "pack:renderer": "cross-env NODE_ENV=production webpack --progress --colors --config .electron-vue/webpack.renderer.config.js",
     "postinstall": "npm run lint:fix"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/laurensiusadi/teambar.git"
+  },
+  "keywords": [
+    "vue",
+    "electron",
+    "menubar",
+    "firebase"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/laurensiusadi/teambar/issues"
+  },
+  "homepage": "https://github.com/laurensiusadi/teambar",
   "build": {
-    "productName": "Team Status Bar",
-    "appId": "us.laurensi.team-status-bar",
+    "productName": "Teambar",
+    "appId": "us.laurensi.teambar",
     "directories": {
       "output": "build"
     },
