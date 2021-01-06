@@ -77,7 +77,7 @@
   },
   "dependencies": {
     "@8bu/vue-otp-input": "^1.2.2",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "electron-store": "^5.2.0",
     "firebase": "^7.24.0",
     "menubar": "^9.0.1",
